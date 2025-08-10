@@ -1,3 +1,8 @@
 [workspace]
-members = ["game", "app_native", "app_web"]
+members = [
+  "core",
+  "render",
+  "platform/desktop",
+  "platform/web",
+]
 resolver = "2"

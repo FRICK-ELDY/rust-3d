@@ -1,0 +1,11 @@
+[package]
+name = "app_desktop"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+core = { path = "../../core" }
+render = { path = "../../render" }
+winit = "0.29"
+pollster = "0.3"
