@@ -1,0 +1,44 @@
+# ==================================
+# Rust / Cargo
+# ==================================
+# Cargo build artifacts
+/target/
+
+# Incremental compilation files
+**/*.rs.bk
+**/*.rs~
+
+# Cargo lock file (optional for libraries)
+# Cargo.lock
+
+# ==================================
+# Trunk (wasm build) outputs
+# ==================================
+# Generated wasm-bindgen output
+/app_web/pkg/
+/app_web/dist/
+
+# ==================================
+# IDE / Editor
+# ==================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs (CLion, IntelliJ, etc.)
+.idea/
+
+# Other editors
+*~
+*.swp
+*.swo
+
+# ==================================
+# OS-specific files
+# ==================================
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
