@@ -1,13 +1,13 @@
 // render/src/lib.rs
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use winit::dpi::PhysicalSize;
 
 pub struct Renderer {
     surface: wgpu::Surface<'static>,
     device:  wgpu::Device,
     queue:   wgpu::Queue,
-    pub config:  wgpu::SurfaceConfiguration,
-    format: wgpu::TextureFormat,
+    pub config: wgpu::SurfaceConfiguration,
+    clear_color: [f32; 4],
 }
 
 impl Renderer {
@@ -15,7 +15,7 @@ impl Renderer {
         window: &'static winit::window::Window,
         size: PhysicalSize<u32>,
     ) -> Result<Self> {
-        // ===== Instance（Webは WebGL2、Desktop は自動選択）=====
+        // Instance（Web は WebGL2、Desktop は自動選択）
         #[cfg(target_arch = "wasm32")]
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::GL,
@@ -37,13 +37,13 @@ impl Renderer {
             .await
             .ok_or_else(|| anyhow!("No adapter"))?;
 
-        // Limits（Web は WebGL2 互換に、Desktop は downlevel 既定）
+        // Limits（Web は WebGL2 互換、Desktop は downlevel 既定）
         #[cfg(target_arch = "wasm32")]
         let limits = wgpu::Limits::downlevel_webgl2_defaults();
         #[cfg(not(target_arch = "wasm32"))]
         let limits = wgpu::Limits::downlevel_defaults();
 
-        // Device / Queue（wasm だと RequestDeviceError が Send/Sync じゃないので map_err で包む）
+        // Device / Queue（wasm だと RequestDeviceError が Send/Sync ではないため明示変換）
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -59,7 +59,7 @@ impl Renderer {
         // Surface 設定
         let caps = surface.get_capabilities(&adapter);
         let format = caps.formats[0];
-        let mut config = wgpu::SurfaceConfiguration {
+        let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
             width: size.width.max(1),
@@ -71,7 +71,18 @@ impl Renderer {
         };
         surface.configure(&device, &config);
 
-        Ok(Self { surface, device, queue, config, format })
+        Ok(Self {
+            surface,
+            device,
+            queue,
+            config,
+            clear_color: [0.02, 0.07, 0.12, 1.0], // 既定の背景色
+        })
+    }
+
+    /// 背景色を RGBA（0.0..1.0）で設定
+    pub fn set_clear_color(&mut self, rgba: [f32; 4]) {
+        self.clear_color = rgba;
     }
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
@@ -84,7 +95,7 @@ impl Renderer {
     }
 
     pub fn render(&mut self, game: &mut core::GameState) -> Result<()> {
-        // ゲーム更新（簡易 dt）
+        // 簡易 dt
         game.update(1.0 / 60.0);
 
         // フレーム取得（失敗時は再設定だけしてスキップ）
@@ -103,8 +114,16 @@ impl Renderer {
         let mut encoder =
             self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        // 背景色：t に応じて脈動
-        let t = game.t.sin() * 0.5 + 0.5;
+        // 背景色：コンフィグの色に軽く脈動を足す
+        let base = self.clear_color;
+        let pulse = (game.t.sin() * 0.2).max(-0.2); // ちょい変化
+        let clear = wgpu::Color {
+            r: (base[0] + pulse) as f64,
+            g: base[1] as f64,
+            b: base[2] as f64,
+            a: base[3] as f64,
+        };
+
         {
             let _rp = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
@@ -112,12 +131,7 @@ impl Renderer {
                     view: &view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: t as f64,
-                            g: 0.07,
-                            b: 0.12,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(clear),
                         store: wgpu::StoreOp::Store,
                     },
                 })],

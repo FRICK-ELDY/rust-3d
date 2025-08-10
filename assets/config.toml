@@ -1,0 +1,5 @@
+window_width  = 1280
+window_height = 720
+fullscreen    = false
+vsync         = true
+clear_color   = [0.10, 0.10, 0.20, 1.0]
