@@ -1,7 +1,15 @@
 // platform/web/src/lib.rs
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::JsFuture;
 use winit::platform::web::WindowBuilderExtWebSys;
+
+async fn fetch_text(url: &str) -> Option<String> {
+    let win = web_sys::window()?;
+    let resp_val = JsFuture::from(win.fetch_with_str(url)).await.ok()?;
+    let resp: web_sys::Response = resp_val.dyn_into().ok()?;
+    JsFuture::from(resp.text().ok()?).await.ok()?.as_string()
+}
 
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
@@ -34,11 +42,19 @@ pub fn start() -> Result<(), JsValue> {
         let window_static: &'static winit::window::Window = Box::leak(Box::new(window));
         let size = window_static.inner_size();
 
+        // ===== コンフィグ読込（なければデフォルト）=====
+        let cfg = if let Some(toml_str) = fetch_text("/config.toml").await {
+            core::GameConfig::from_toml_str(&toml_str).unwrap_or_default()
+        } else {
+            core::GameConfig::default()
+        };
+
         // ===== 共通ロジック & レンダラー =====
         let mut game = core::GameState::new();
         let mut renderer = render::Renderer::new(window_static, size)
             .await
             .expect("renderer");
+        renderer.set_clear_color(cfg.clear_color);
 
         // ===== requestAnimationFrame ループ =====
         use std::cell::RefCell;
@@ -47,7 +63,7 @@ pub fn start() -> Result<(), JsValue> {
         let g = f.clone();
 
         *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-            let _ = renderer.render(&mut game); // エラーは握りつぶし（ログに出したければ map_err 等で）
+            let _ = renderer.render(&mut game);
 
             // 次フレーム
             web_sys::window().unwrap()

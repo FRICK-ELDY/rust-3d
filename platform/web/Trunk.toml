@@ -1,0 +1,3 @@
+[[copy]]
+source = "../../assets/config.toml"
+target = "config.toml"
