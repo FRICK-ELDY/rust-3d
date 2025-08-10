@@ -1,0 +1,13 @@
+[package]
+name = "render"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+core = { path = "../core" }
+winit = "0.29"
+wgpu = "0.20"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { version = "0.20", features = ["webgl"] }

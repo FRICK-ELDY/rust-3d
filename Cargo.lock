@@ -68,12 +68,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "app_native"
+name = "anyhow"
+version = "1.0.98"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
+
+[[package]]
+name = "app_desktop"
 version = "0.1.0"
 dependencies = [
- "game",
+ "anyhow",
+ "core",
  "pollster",
- "wgpu",
+ "render",
  "winit",
 ]
 
@@ -82,12 +89,12 @@ name = "app_web"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
- "game",
+ "core",
  "js-sys",
+ "render",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "wgpu",
  "winit",
 ]
 
@@ -326,6 +333,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "core"
+version = "0.1.0"
+
+[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -466,10 +477,6 @@ name = "foreign-types-shared"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
-
-[[package]]
-name = "game"
-version = "0.1.0"
 
 [[package]]
 name = "gethostname"
@@ -1096,6 +1103,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5407465600fb0548f1442edf71dd20683c6ed326200ace4b1ef0763521bb3b77"
 dependencies = [
  "bitflags 2.9.1",
+]
+
+[[package]]
+name = "render"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "core",
+ "wgpu",
+ "winit",
 ]
 
 [[package]]
