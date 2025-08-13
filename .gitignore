@@ -15,8 +15,7 @@
 # Trunk (wasm build) outputs
 # ==================================
 # Generated wasm-bindgen output
-/app_web/pkg/
-/app_web/dist/
+platform/web/dist/
 
 # ==================================
 # IDE / Editor
