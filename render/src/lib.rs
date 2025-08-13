@@ -3,6 +3,8 @@ use winit::dpi::PhysicalSize;
 
 mod color;
 use crate::color::ColorUtils;
+mod grid;
+use crate::grid::Grid;
 
 pub struct Renderer {
     surface: wgpu::Surface<'static>,
@@ -10,6 +12,7 @@ pub struct Renderer {
     queue:   wgpu::Queue,
     pub config: wgpu::SurfaceConfiguration,
     clear_color: [f32; 4],
+    grid: Option<Grid>,
 }
 
 impl Renderer {
@@ -17,7 +20,6 @@ impl Renderer {
         window: &'static winit::window::Window,
         size: PhysicalSize<u32>,
     ) -> Result<Self> {
-        // Instance（Web は WebGL2、Desktop は自動選択）
         #[cfg(target_arch = "wasm32")]
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::GL,
@@ -26,10 +28,8 @@ impl Renderer {
         #[cfg(not(target_arch = "wasm32"))]
         let instance = wgpu::Instance::default();
 
-        // Surface
         let surface = instance.create_surface(window).expect("create surface");
 
-        // Adapter
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
@@ -39,13 +39,11 @@ impl Renderer {
             .await
             .ok_or_else(|| anyhow!("No adapter"))?;
 
-        // Limits（Web は WebGL2 互換、Desktop は downlevel 既定）
         #[cfg(target_arch = "wasm32")]
         let limits = wgpu::Limits::downlevel_webgl2_defaults();
         #[cfg(not(target_arch = "wasm32"))]
         let limits = wgpu::Limits::downlevel_defaults();
 
-        // Device / Queue（wasm だと RequestDeviceError が Send/Sync ではないため明示変換）
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -58,7 +56,6 @@ impl Renderer {
             .await
             .map_err(|e| anyhow!("request_device failed: {e:?}"))?;
 
-        // Surface 設定
         let caps = surface.get_capabilities(&adapter);
         let format = caps.formats[0];
         let config = wgpu::SurfaceConfiguration {
@@ -73,16 +70,19 @@ impl Renderer {
         };
         surface.configure(&device, &config);
 
+        // グリッド生成
+        let grid = Some(Grid::new(&device, &config));
+
         Ok(Self {
             surface,
             device,
             queue,
             config,
-            clear_color: [0.02, 0.07, 0.12, 1.0], // 既定の背景色
+            clear_color: [0.02, 0.07, 0.12, 1.0],
+            grid,
         })
     }
 
-    /// 背景色を RGBA（0.0..1.0）で設定
     pub fn set_clear_color(&mut self, rgba: [f32; 4]) {
         self.clear_color = rgba;
     }
@@ -94,13 +94,14 @@ impl Renderer {
         self.config.width = new_size.width;
         self.config.height = new_size.height;
         self.surface.configure(&self.device, &self.config);
+
+        // グリッドも再生成
+        self.grid = Some(Grid::new(&self.device, &self.config));
     }
 
-    pub fn render(&mut self, game: &mut core::GameState) -> Result<()> {
-        // ゲーム状態更新
+    pub fn render(&mut self, game: &mut game::GameState) -> Result<()> {
         game.update(1.0 / 60.0);
 
-        // フレーム取得（失敗時は再設定だけしてスキップ）
         let frame = match self.surface.get_current_texture() {
             Ok(f) => f,
             Err(_) => {
@@ -121,7 +122,7 @@ impl Renderer {
         let clear = ColorUtils::to_wgpu_color(clear_rgba);
 
         {
-            let _rp = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut rp = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
@@ -135,6 +136,11 @@ impl Renderer {
                 occlusion_query_set: None,
                 timestamp_writes: None,
             });
+
+            // グリッド描画
+            if let Some(grid) = &self.grid {
+                grid.draw(&mut rp);
+            }
         }
 
         self.queue.submit([encoder.finish()]);

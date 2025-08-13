@@ -5,9 +5,10 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
-core = { path = "../core" }
+game = { path = "../game" }
 winit = "0.29"
 wgpu = "0.20"
+bytemuck = { version = "1.14", features = ["derive"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = { version = "0.20", features = ["webgl"] }

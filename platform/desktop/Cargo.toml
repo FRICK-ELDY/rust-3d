@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
-core = { path = "../../core" }
+game = { path = "../../game" }
 render = { path = "../../render" }
 winit = "0.29"
 pollster = "0.3"

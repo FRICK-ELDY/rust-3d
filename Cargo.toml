@@ -1,6 +1,6 @@
 [workspace]
 members = [
-  "core",
+  "game",
   "render",
   "platform/desktop",
   "platform/web",
