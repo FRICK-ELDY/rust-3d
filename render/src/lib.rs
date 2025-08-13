@@ -1,6 +1,8 @@
-// render/src/lib.rs
 use anyhow::{anyhow, Result};
 use winit::dpi::PhysicalSize;
+
+mod color;
+use crate::color::ColorUtils;
 
 pub struct Renderer {
     surface: wgpu::Surface<'static>,
@@ -95,7 +97,7 @@ impl Renderer {
     }
 
     pub fn render(&mut self, game: &mut core::GameState) -> Result<()> {
-        // 簡易 dt
+        // ゲーム状態更新
         game.update(1.0 / 60.0);
 
         // フレーム取得（失敗時は再設定だけしてスキップ）
@@ -114,15 +116,9 @@ impl Renderer {
         let mut encoder =
             self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        // 背景色：コンフィグの色に軽く脈動を足す
-        let base = self.clear_color;
-        let pulse = (game.t.sin() * 0.2).max(-0.2); // ちょい変化
-        let clear = wgpu::Color {
-            r: (base[0] + pulse) as f64,
-            g: base[1] as f64,
-            b: base[2] as f64,
-            a: base[3] as f64,
-        };
+        // 背景色：ColorUtilsで脈動色を生成
+        let clear_rgba = ColorUtils::pulse_color(self.clear_color, game.t);
+        let clear = ColorUtils::to_wgpu_color(clear_rgba);
 
         {
             let _rp = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
