@@ -1,0 +1,34 @@
+version: 1
+entry:
+  - path: docs/ai/INDEX.md
+  - path: docs/ai/PROMPT.md
+priority_docs:
+  contributing: docs/ai/CONTRIBUTING.md
+  architecture: docs/ai/ARCHITECTURE.md
+  naming: docs/ai/NAMING.md
+  coding: docs/ai/CODING_RULES.md
+  lint: docs/ai/LINTING.md
+  qa_hints: docs/ai/QA_HINTS.md
+  search_map: docs/ai/SEARCH_MAP.md
+  decisions: docs/ai/DECISIONS.md
+  adr_dir: docs/ai/ADR/
+code_entry:
+  renderer: render/src/renderer.rs
+  camera: render/src/camera.rs
+  game_app: game/src/app.rs
+  input: game/src/input.rs
+  web_main: platform/web/src/lib.rs
+  desktop_main: platform/desktop/src/main.rs
+samples:
+  - examples/draw_grid.rs
+  - examples/cube_basic.rs
+defaults:
+  coordinate_system: "right-handed"
+  up_axis: "Y+"
+  forward_axis: "Z-"
+  color_space: "sRGB"
+  timestep: "variable_dt"
+related_docs:
+  shader_guide: docs/SHADER_GUIDE.md
+  camera_doc: docs/CAMERA.md
+  render_pipeline_doc: docs/RENDER_PIPELINE.md

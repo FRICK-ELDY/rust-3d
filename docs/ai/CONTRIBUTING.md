@@ -1,25 +1,49 @@
-## 1. コーディング規約
+# Contributing Guide
 
-- 公式Rustスタイルガイド（[Rust公式スタイル](https://doc.rust-lang.org/1.0.0/style/)）に従う
-- インデントはスペース2つ
-- 1行は80〜120文字以内を目安にする
-- 変数や関数には型推論を活用しつつ、可読性を優先する
-- コメントは英語で簡潔に書く
-- `unsafe`は極力使わない。使う場合は理由を明記する
-- 外部クレートはCargo.tomlで明示し、バージョンを固定する
+このプロジェクトに参加するための流れとルールをまとめています。  
+詳細なコーディング規約や設計方針は AI 用ドキュメント群に記載しています。
 
-## 2. 設計方針
+---
 
-- モジュール分割を意識し、責任範囲ごとにcrateやmoduleを分ける
-- 共通処理は`game`、描画は`render`、プラットフォーム依存は`platform`に配置
-- 設定値やリソースは`assets`ディレクトリで一元管理
-- エラー処理は`Result`型や`Option`型を活用し、パニックを避ける
-- テスト可能な設計（関数の分割、依存の注入など）を心がける
+## 1. 開発フロー
+1. **Issue 作成**  
+   - 新機能提案やバグ報告はまず Issue を作成
+   - 必要に応じてラベルを付与（`feature`, `bug`, `docs` など）
+2. **フォーク & ブランチ作成**  
+   - ブランチ名は `feature/xxx` または `fix/xxx` 形式
+3. **実装**  
+   - ローカルで lint / fmt / test を実行
+4. **Pull Request 作成**  
+   - テンプレートに沿って説明を書く
+   - 関連する Issue 番号を必ず記載
 
-## 3. 命名規則
+---
 
-- 変数・関数：`snake_case`（例: `player_position`、`update_score`）
-- 構造体・列挙体・トレイト：`CamelCase`（例: `GameState`、`RenderEngine`）
-- 定数・静的変数：`SCREAMING_SNAKE_CASE`（例: `MAX_PLAYER_COUNT`）
-- モジュール・ファイル名：`snake_case`
-- テスト関数：`test_`で始める（例: `test_player_move`）
+## 2. 規約へのリンク
+詳細は以下を参照してください。
+- コーディング規約: [`docs/ai/CODING_RULES.md`](CODING_RULES.md)
+- 命名規則: [`docs/ai/NAMING.md`](NAMING.md)
+- Lint 方針: [`docs/ai/LINTING.md`](LINTING.md)
+- 設計概要: [`docs/ai/ARCHITECTURE.md`](ARCHITECTURE.md)
+
+---
+
+## 3. 設計方針（概要）
+- 共通処理は `game/` に配置
+- 描画処理は `render/` に配置
+- プラットフォーム依存処理は `platform/` に配置
+- 設定値やリソースは `assets/` に配置
+- テスト可能な設計（依存注入・関数分割）を心がける
+
+---
+
+## 4. PR & Issue のルール
+- コミットメッセージは短く簡潔に
+- PR 説明欄に関連 Issue 番号を記載
+- バグ報告時は再現手順・環境・スクリーンショットを添付
+
+---
+
+## 5. 注意事項
+- `unsafe` の使用は極力避ける。使用時は理由を明記（`CODING_RULES.md` 参照）
+- 外部クレートは Cargo.toml に明示し、バージョンを固定
