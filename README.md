@@ -1,5 +1,9 @@
 # rust-3d
 
+## For AI readers
+このプロジェクトの設計/規約/参照先は `docs/ai/INDEX.md` に集約済み。
+AIで解析する際はまず `docs/ai/PROMPT.md` を読んで回答方針を遵守してください。
+
 ## 概要
 
 ## Rust インストーラを直接実行
