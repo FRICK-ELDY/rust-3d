@@ -1,4 +1,4 @@
-# Coding Rules
+# Codegen Rules for AI
 
 **目的**: コード品質の一貫性と保守性を確保し、誰が見ても理解しやすく修正しやすい状態を保つ。
 
@@ -72,3 +72,24 @@
 ## 更新ルール
 - 設計変更や大きな仕様追加は `DECISIONS.md` に記録
 - 規約と実装が矛盾する場合は **最新コードを優先**し、修正提案を記録
+
+## Dependencies
+- 追加するクレートは `Cargo.toml` ではなく **root の `[workspace.dependencies]` に追記**。
+- 各 crate 側は `xxx = { workspace = true }` を使う（例: `winit`, `anyhow`, `pollster`, `serde`, `toml`）。
+
+## File Placement
+- GPU 周り: `render/src/gpu/`
+- 新しい描画パイプライン: `render/src/pipelines/<name>.rs` + 必要なら `shaders/<name>/`
+- 1 パス複数パイプラインの場合は `render/src/passes/` に統括ロジックを置く
+- シーン要素は `render/src/scene/` に追加
+
+## Winit 0.30（Desktop）
+- エントリは `ApplicationHandler`（`resumed` で Window/Renderer 初期化、`window_event` で resize/close）。
+- 直接 `EventLoop::run` を書かない。**`resumed`/`window_event` に分離**する。
+
+## Shader
+- WGSL ファイルは `render/shaders/<group>/` に配置。ローダから相対パスで取得できる構造を維持。
+- 共通定義は `shaders/common/` に。
+
+## Config
+- ゲーム設定は `GameConfig` に追加し、**TOML から読み込める**よう `serde` で derive する。
