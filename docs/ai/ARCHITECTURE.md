@@ -1,42 +1,26 @@
-# Architecture Overview
+# Project Architecture (for AI)
 
 **目的**: このドキュメントは、リポジトリ全体の構成、各レイヤーの責務、データフロー、依存関係ルールを明確化する。
 
 ---
 
-## レイヤー構成
-本プロジェクトは以下の3層に分かれる。
+## Workspace Layout
+- `game/` … ゲーム状態と設定（`GameConfig`）、ロジック
+- `render/` … WGPU レンダラ本体
+  - `gpu/` … Surface/Device/Queue/Buffer/Texture/BindGroup/Shader/PipelineCache
+  - `io/` … mesh/shader/texture ローダ
+  - `math/` … Transform 等
+  - `passes/` … レンダリングパス（例: `main_opaque`）
+  - `pipelines/` … パイプライン単位（`grid.rs`, `gizmo.rs` など）
+  - `scene/` … カメラ・マテリアル・メッシュ等のシーン表現
+  - `platform/` … `desktop.rs` / `web.rs` のブリッジ
+  - `shaders/` … `common/`, `grid/`, `gizmo/` 等に配置
+- `platform/desktop/` … `winit 0.30` の `ApplicationHandler` ベースで起動
+- `platform/web/` … WASM/Trunk 用の web エントリ
 
-### 1. Render 層 (`render/`)
-- **役割**: wgpu を用いた描画処理を担当
-- **責務**:
-  - デバイス/キュー/サーフェスの初期化と管理
-  - シェーダ（WGSL）読み込みとパイプライン生成
-  - メッシュ/カメラ/グリッド描画
-  - レンダリングパスの管理
-- **依存制約**:
-  - `game/` 層への依存は禁止（描画専用）
-  - `platform/` から呼び出される
-
-### 2. Game 層 (`game/`)
-- **役割**: ゲームロジック、入力管理、シーン制御
-- **責務**:
-  - 入力の抽象化（WASD、マウス、タッチ）
-  - カメラ制御
-  - ゲーム状態の更新（タイムステップ）
-  - ECS 風のシステム登録・実行
-- **依存制約**:
-  - `render/` の API を利用可
-  - `platform/` から初期化・更新が呼ばれる
-
-### 3. Platform 層 (`platform/desktop`, `platform/web`)
-- **役割**: エントリーポイントとイベントループ
-- **責務**:
-  - winit によるウィンドウ生成・イベント処理
-  - デスクトップと Web(WASM) のビルド・起動コード
-  - Game 層と Render 層の初期化・接続
-- **依存制約**:
-  - `render/`, `game/` 両方に依存可
+## Cross-Crate Rules
+- 依存は **`[workspace.dependencies]` に統一**。各 crate 側では `foo = { workspace = true }` を使う。
+- `render` はプラットフォーム非依存。Window 由来のリソースは `render::platform::{desktop,web}` を経由。
 
 ---
 
