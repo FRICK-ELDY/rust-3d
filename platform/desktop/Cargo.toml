@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1"
-game = { path = "../../game" }
+game   = { path = "../../game" }
 render = { path = "../../render" }
-winit = "0.29"
-pollster = "0.3"
+winit  = { workspace = true }
+anyhow = { workspace = true }
+pollster = { workspace = true } 

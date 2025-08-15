@@ -1,57 +1,66 @@
-use anyhow::Result;
-use std::{fs, path::PathBuf};
+use std::sync::Arc;
 use winit::{
-    event::{Event, WindowEvent},
-    event_loop::EventLoop,
-    window::WindowBuilder,
+    application::ApplicationHandler,
+    dpi::PhysicalSize,
+    event::WindowEvent,
+    event_loop::{ActiveEventLoop, EventLoop},
+    window::Window,
 };
 
-fn load_config_desktop() -> game::GameConfig {
-    let exe_dir = std::env::current_exe().ok()
-        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-        .unwrap_or_else(|| PathBuf::from("."));
-    let path = exe_dir.join("config.toml");
-    if let Ok(txt) = fs::read_to_string(&path) {
-        if let Ok(cfg) = game::GameConfig::from_toml_str(&txt) {
-            return cfg;
-        }
-    }
-    game::GameConfig::default()
+struct App {
+    window: Option<Arc<Window>>,
+    renderer: Option<render::Renderer>,
+    scene: render::scene::Scene,
 }
 
-fn main() -> Result<()> {
-    let cfg = load_config_desktop();
+impl Default for App {
+    fn default() -> Self {
+        Self { window: None, renderer: None, scene: Default::default() }
+    }
+}
 
-    let event_loop = EventLoop::new()?;
-    let window = WindowBuilder::new()
-        .with_title("rust-3d (desktop)")
-        .with_inner_size(winit::dpi::LogicalSize::new(cfg.window_width, cfg.window_height))
-        .with_fullscreen(if cfg.fullscreen {
-            Some(winit::window::Fullscreen::Borderless(None))
-        } else {
-            None
-        })
-        .build(&event_loop)?;
+impl ApplicationHandler for App {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        if self.window.is_some() { return; }
+        let window = Arc::new(
+            event_loop.create_window(Window::default_attributes().with_title("wgpu test")).unwrap()
+        );
+        let size = window.inner_size();
+        let window_static: &'static Window = unsafe { std::mem::transmute::<&Window, &'static Window>(&window) };
 
-    let window_static: &'static winit::window::Window = Box::leak(Box::new(window));
-    let size = window_static.inner_size();
+        // 非同期初期化をブロックして待つ
+        let renderer = pollster::block_on(render::Renderer::new(window_static, size)).unwrap();
 
-    let mut game = game::GameState::new();
-    let mut renderer = pollster::block_on(render::Renderer::new(window_static, size))?;
+        self.window = Some(window);
+        self.renderer = Some(renderer);
+    }
 
-    event_loop.run(move |event, elwt| {
+    fn window_event(&mut self, _event_loop: &ActiveEventLoop, window_id: winit::window::WindowId, event: WindowEvent) {
+        let Some(window) = &self.window else { return; };
+        if window.id() != window_id { return; }
+
         match event {
-            Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CloseRequested => elwt.exit(),
-                WindowEvent::Resized(s) => renderer.resize(s),
-                _ => {}
-            },
-            Event::AboutToWait => {
-                renderer.set_clear_color(cfg.clear_color);
-                let _ = renderer.render(&mut game);
+            WindowEvent::CloseRequested => {
+                std::process::exit(0);
+            }
+            WindowEvent::Resized(new_size) => {
+                if let Some(r) = &mut self.renderer {
+                    r.resize(PhysicalSize::new(new_size.width, new_size.height));
+                }
+            }
+            WindowEvent::RedrawRequested => {
+                if let Some(r) = &mut self.renderer {
+                    let _ = r.render(&self.scene);
+                }
+                window.request_redraw();
             }
             _ => {}
         }
-    })?;
-    Ok(())
+    }
+}
+
+fn main() {
+    let event_loop = EventLoop::new().unwrap();
+    let mut app = App::default();
+    event_loop.run_app(&mut app).unwrap();
 }

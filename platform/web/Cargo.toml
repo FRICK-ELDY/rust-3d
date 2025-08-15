@@ -9,10 +9,11 @@ crate-type = ["cdylib"]
 [dependencies]
 game   = { path = "../../game" }
 render = { path = "../../render" }
-winit = { version = "0.29", features = ["rwh_05"] }
+winit  = { workspace = true, features = ["rwh_05"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 console_error_panic_hook = "0.1"
 js-sys = "0.3"
-
-web-sys = { version = "0.3", features = ["Window","Document","Element","HtmlCanvasElement","Response"] }
+web-sys = { version = "0.3", features = [
+  "Window","Document","Element","HtmlCanvasElement","Response"
+] }
