@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1"
-game = { path = "../game" }
-winit = "0.29"
-wgpu = "0.20"
-bytemuck = { version = "1.14", features = ["derive"] }
+game     = { path = "../game" }
+wgpu     = { workspace = true }      # ← デスクトップ/WEB 両方で使う
+winit    = { workspace = true }
+anyhow   = { workspace = true }
+bytemuck = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wgpu = { version = "0.20", features = ["webgl"] }
+wgpu = { workspace = true, features = ["webgpu"] }

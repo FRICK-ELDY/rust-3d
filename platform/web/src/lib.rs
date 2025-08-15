@@ -1,8 +1,8 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-use winit::platform::web::WindowBuilderExtWebSys;
 use winit::dpi::PhysicalSize;
+use winit::platform::web::WindowAttributesExtWebSys;
 
 // ===== 任意：/config.toml を文字列で取る =====
 async fn fetch_text(url: &str) -> Option<String> {
@@ -30,8 +30,6 @@ fn set_canvas_pixel_size(canvas: &web_sys::HtmlCanvasElement, win: &web_sys::Win
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
-    // wasm_logger を使うなら:
-    // wasm_logger::init(wasm_logger::Config::default());
 
     wasm_bindgen_futures::spawn_local(async move {
         // ===== DOM 準備 =====
@@ -54,15 +52,14 @@ pub fn start() -> Result<(), JsValue> {
         // 初回の実ピクセル設定
         let (init_w, init_h) = set_canvas_pixel_size(&canvas, &win);
 
-        // ===== winit Window を Canvas に紐付け =====
+        // ===== winit: WindowAttributes 経由で Web Canvas に結び付け =====
         let event_loop = winit::event_loop::EventLoop::new().unwrap();
-        let window = winit::window::WindowBuilder::new()
+        let attrs = winit::window::Window::default_attributes()
             .with_title("rust-3d (web)")
-            .with_canvas(Some(canvas.clone()))
-            .build(&event_loop)
-            .unwrap();
+            .with_canvas(Some(canvas.clone())); // ← Web固有
+        let window = event_loop.create_window(attrs).unwrap();
 
-        // Surface<'static> に合わせてリーク（Webでは終了時開放不要）
+        // Surface<'static> 対応：WebではリークでOK（ページ終了時に解放される）
         let window_static: &'static winit::window::Window = Box::leak(Box::new(window));
 
         // ===== 設定ファイルの任意読込 =====
@@ -72,17 +69,24 @@ pub fn start() -> Result<(), JsValue> {
             game::GameConfig::default()
         };
 
-        // ===== GameState & Renderer 準備 =====
-        let game = game::GameState::new();
-        let mut renderer = render::Renderer::new(window_static, (init_w, init_h).into())
-            .await
-            .expect("renderer init failed");
+        // ===== Scene & Renderer 準備（Renderer は Scene を参照する想定）=====
+        let scene = render::scene::Scene::default();
+
+        let mut renderer = render::Renderer::new(
+            window_static,
+            PhysicalSize::new(init_w, init_h),
+        )
+        .await
+        .expect("renderer init failed");
+
+        // クリア色（config から）
+        // cfg.clear_color は [f32;4] を想定
         renderer.set_clear_color(cfg.clear_color);
 
         // ===== リサイズ対応：ResizeObserver =====
-        // Renderer を Rc<RefCell<..>> に包んで、コールバックから触れるようにする
         use std::cell::RefCell;
         use std::rc::Rc;
+
         let renderer_rc = Rc::new(RefCell::new(renderer));
         let renderer_for_resize = renderer_rc.clone();
         let canvas_for_resize = canvas.clone();
@@ -91,7 +95,9 @@ pub fn start() -> Result<(), JsValue> {
         let resize_cb = Closure::<dyn FnMut(js_sys::Array, web_sys::ResizeObserver)>::wrap(Box::new(
             move |_, _| {
                 let (w, h) = set_canvas_pixel_size(&canvas_for_resize, &win_for_resize);
-                renderer_for_resize.borrow_mut().resize(PhysicalSize::new(w, h));
+                renderer_for_resize
+                    .borrow_mut()
+                    .resize(PhysicalSize::new(w, h));
             },
         ));
         let ro = web_sys::ResizeObserver::new(resize_cb.as_ref().unchecked_ref()).unwrap();
@@ -99,22 +105,21 @@ pub fn start() -> Result<(), JsValue> {
         resize_cb.forget(); // keep alive
 
         // ===== requestAnimationFrame ループ =====
+        let scene_rc = Rc::new(scene); // Scene は共有で OK（&Scene で渡す）
         let f: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
         let g = f.clone();
-
-        // game はループ内で可変参照が必要 → Rc<RefCell>
-        let game_rc = Rc::new(RefCell::new(game));
         let renderer_for_loop = renderer_rc.clone();
+        let scene_for_loop = scene_rc.clone();
 
         *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-            // 1フレーム描画
-            if let Err(e) = renderer_for_loop.borrow_mut().render(&mut *game_rc.borrow_mut()) {
+            if let Err(e) = renderer_for_loop.borrow_mut().render(&scene_for_loop) {
                 web_sys::console::error_1(&format!("render error: {:?}", e).into());
             }
-            // 次フレーム
             web_sys::window()
                 .unwrap()
-                .request_animation_frame(f.borrow().as_ref().unwrap().as_ref().unchecked_ref())
+                .request_animation_frame(
+                    f.borrow().as_ref().unwrap().as_ref().unchecked_ref()
+                )
                 .unwrap();
         }) as Box<dyn FnMut()>));
 
