@@ -1,1 +1,3 @@
-pub mod main_opaque;
+pub trait Pass {
+  fn draw<'a>(&'a self, pass: &mut wgpu::RenderPass<'a>);
+}
