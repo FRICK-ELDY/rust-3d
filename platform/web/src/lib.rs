@@ -1,10 +1,11 @@
+// platform/web/src/lib.rs
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use winit::dpi::PhysicalSize;
 use winit::platform::web::WindowAttributesExtWebSys;
 
-// ===== 任意：/config.toml を文字列で取る =====
+// ===== 任意：/config.toml を文字列で取る（使わないなら削除OK）=====
 async fn fetch_text(url: &str) -> Option<String> {
     let win = web_sys::window()?;
     let resp_val = JsFuture::from(win.fetch_with_str(url)).await.ok()?;
@@ -29,8 +30,10 @@ fn set_canvas_pixel_size(canvas: &web_sys::HtmlCanvasElement, win: &web_sys::Win
 
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
+    // panic をブラウザコンソールへ
     console_error_panic_hook::set_once();
 
+    // 非同期初期化 & ループ
     wasm_bindgen_futures::spawn_local(async move {
         // ===== DOM 準備 =====
         let win = web_sys::window().expect("no window");
@@ -44,8 +47,12 @@ pub fn start() -> Result<(), JsValue> {
         let canvas: web_sys::HtmlCanvasElement = doc
             .create_element("canvas").unwrap()
             .dyn_into().unwrap();
+        // ページ全面に広げたい場合は親要素の高さも100%にしておくこと
         canvas
-            .set_attribute("style", "width:100%;height:100%;display:block;margin:0;padding:0;")
+            .set_attribute(
+                "style",
+                "width:100%;height:100%;display:block;margin:0;padding:0;touch-action:none;",
+            )
             .ok();
         root.append_child(&canvas).ok();
 
@@ -59,29 +66,23 @@ pub fn start() -> Result<(), JsValue> {
             .with_canvas(Some(canvas.clone())); // ← Web固有
         let window = event_loop.create_window(attrs).unwrap();
 
-        // Surface<'static> 対応：WebではリークでOK（ページ終了時に解放される）
+        // Surface<'static> が必要なのでリークで 'static に固定（ページ閉鎖で解放される）
         let window_static: &'static winit::window::Window = Box::leak(Box::new(window));
 
-        // ===== 設定ファイルの任意読込 =====
-        let cfg = if let Some(toml_str) = fetch_text("/config.toml").await {
-            game::GameConfig::from_toml_str(&toml_str).unwrap_or_default()
-        } else {
-            game::GameConfig::default()
-        };
-
-        // ===== Scene & Renderer 準備（Renderer は Scene を参照する想定）=====
+        // ===== Scene & Renderer 準備 =====
         let scene = render::scene::Scene::default();
 
-        let mut renderer = render::Renderer::new(
+        let renderer = render::Renderer::new(
             window_static,
             PhysicalSize::new(init_w, init_h),
         )
         .await
         .expect("renderer init failed");
 
-        // クリア色（config から）
-        // cfg.clear_color は [f32;4] を想定
-        renderer.set_clear_color(cfg.clear_color);
+        // 例：任意の設定を読みたい場合（存在しなければ無視）
+        // if let Some(toml_str) = fetch_text("/config.toml").await {
+        //     // 必要ならここで独自に parse して renderer.set_clear_color([...]) など
+        // }
 
         // ===== リサイズ対応：ResizeObserver =====
         use std::cell::RefCell;
@@ -92,40 +93,43 @@ pub fn start() -> Result<(), JsValue> {
         let canvas_for_resize = canvas.clone();
         let win_for_resize = win.clone();
 
-        let resize_cb = Closure::<dyn FnMut(js_sys::Array, web_sys::ResizeObserver)>::wrap(Box::new(
-            move |_, _| {
-                let (w, h) = set_canvas_pixel_size(&canvas_for_resize, &win_for_resize);
-                renderer_for_resize
-                    .borrow_mut()
-                    .resize(PhysicalSize::new(w, h));
-            },
-        ));
+        let resize_cb =
+            Closure::<dyn FnMut(js_sys::Array, web_sys::ResizeObserver)>::wrap(Box::new(
+                move |_, _| {
+                    let (w, h) = set_canvas_pixel_size(&canvas_for_resize, &win_for_resize);
+                    renderer_for_resize
+                        .borrow_mut()
+                        .resize(PhysicalSize::new(w, h));
+                },
+            ));
         let ro = web_sys::ResizeObserver::new(resize_cb.as_ref().unchecked_ref()).unwrap();
         ro.observe(&canvas);
         resize_cb.forget(); // keep alive
 
         // ===== requestAnimationFrame ループ =====
-        let scene_rc = Rc::new(scene); // Scene は共有で OK（&Scene で渡す）
-        let f: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
-        let g = f.clone();
+        let scene_rc = Rc::new(scene); // &Scene で渡すので共有でOK
+        let raf_cell: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
+        let raf_closure = raf_cell.clone();
         let renderer_for_loop = renderer_rc.clone();
         let scene_for_loop = scene_rc.clone();
 
-        *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+        *raf_closure.borrow_mut() = Some(Closure::wrap(Box::new(move || {
             if let Err(e) = renderer_for_loop.borrow_mut().render(&scene_for_loop) {
                 web_sys::console::error_1(&format!("render error: {:?}", e).into());
             }
-            web_sys::window()
+            // 次フレーム
+            let _ = web_sys::window()
                 .unwrap()
                 .request_animation_frame(
-                    f.borrow().as_ref().unwrap().as_ref().unchecked_ref()
-                )
-                .unwrap();
+                    raf_cell.borrow().as_ref().unwrap().as_ref().unchecked_ref(),
+                );
         }) as Box<dyn FnMut()>));
 
         web_sys::window()
             .unwrap()
-            .request_animation_frame(g.borrow().as_ref().unwrap().as_ref().unchecked_ref())
+            .request_animation_frame(
+                raf_closure.borrow().as_ref().unwrap().as_ref().unchecked_ref(),
+            )
             .unwrap();
     });
 
