@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use winit::dpi::PhysicalSize;
 use super::instance::GpuContext;
 
@@ -36,9 +36,58 @@ impl SurfaceState {
     }
 
     pub fn resize(&mut self, ctx: &GpuContext, new_size: PhysicalSize<u32>) {
-        if new_size.width == 0 || new_size.height == 0 { return; }
+        if new_size.width == 0 || new_size.height == 0 {
+            self.config.width = 0;
+            self.config.height = 0;
+            return;
+        }
         self.config.width  = new_size.width;
         self.config.height = new_size.height;
         self.surface.configure(&ctx.device, &self.config);
+    }
+
+    /// Lost/Outdated の復旧（サイズは self.config に従う）
+    pub fn reconfigure(&mut self, ctx: &GpuContext) {
+        if self.config.width == 0 || self.config.height == 0 {
+            return;
+        }
+        self.surface.configure(&ctx.device, &self.config);
+    }
+
+    /// 現在のフレームを**堅牢に**取得する:
+    /// - ゼロサイズ: Ok(None)
+    /// - Timeout: device.poll 後 1 回だけ再試行
+    /// - Lost/Outdated: reconfigure 後 1 回だけ再試行
+    /// - OutOfMemory: Err（致命扱い）
+    pub fn acquire_current_frame(
+        &mut self,
+        ctx: &GpuContext,
+    ) -> Result<Option<wgpu::SurfaceTexture>> {
+        if self.config.width == 0 || self.config.height == 0 {
+            return Ok(None);
+        }
+
+        match self.surface.get_current_texture() {
+            Ok(frame) => Ok(Some(frame)),
+            Err(wgpu::SurfaceError::Timeout) => {
+                std::thread::yield_now();
+                self.surface
+                    .get_current_texture()
+                    .map(Some)
+                    .map_err(|e| anyhow!("SurfaceError after Timeout retry: {e:?}"))
+            }
+            Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
+                self.reconfigure(ctx);
+                self.surface
+                    .get_current_texture()
+                    .map(Some)
+                    .map_err(|e| anyhow!("SurfaceError after reconfigure retry: {e:?}"))
+            }
+            Err(wgpu::SurfaceError::OutOfMemory) => {
+                Err(anyhow!("wgpu SurfaceError::OutOfMemory"))
+            }
+            // ← これを追加（フォールバック）
+            Err(other) => Err(anyhow!("wgpu SurfaceError (other): {other:?}")),
+        }
     }
 }

@@ -82,7 +82,7 @@ impl Renderer {
     }
 
     pub fn render(&mut self, _scene: &Scene) -> Result<()> {
-        let Some(frame) = acquire_frame(&mut self.surface, self.state.size, &self.ctx)? else { return Ok(()); };
+        let Some(frame) = acquire_frame(&mut self.surface, &self.ctx)? else { return Ok(()); };
         let swap_view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         let mut encoder = self.ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
