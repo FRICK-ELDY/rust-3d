@@ -1,1 +1,5 @@
-pub enum Material { Unlit }
+
+#[allow(dead_code)]
+pub enum Material {
+    Unlit,
+}

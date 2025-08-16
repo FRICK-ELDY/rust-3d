@@ -1,5 +1,5 @@
-pub mod state;
 pub mod config;
+pub mod state;
 
-pub use state::GameState;
 pub use config::GameConfig;
+pub use state::GameState;

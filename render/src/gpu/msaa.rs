@@ -9,10 +9,20 @@ pub struct MsaaTargets {
 }
 
 impl MsaaTargets {
-    pub fn new(device: &Device, width: u32, height: u32, format: TextureFormat, sample_count: u32) -> Self {
+    pub fn new(
+        device: &Device,
+        width: u32,
+        height: u32,
+        format: TextureFormat,
+        sample_count: u32,
+    ) -> Self {
         let color_tex = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("render/msaa-color"),
-            size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count,
             dimension: wgpu::TextureDimension::D2,
@@ -21,11 +31,22 @@ impl MsaaTargets {
             view_formats: &[],
         });
         let color_view = color_tex.create_view(&wgpu::TextureViewDescriptor::default());
-        Self { color_tex, color_view, sample_count, format }
+        Self {
+            color_tex,
+            color_view,
+            sample_count,
+            format,
+        }
     }
 
     pub fn resize(&mut self, device: &Device, width: u32, height: u32) {
-        *self = Self::new(device, width.max(1), height.max(1), self.format, self.sample_count);
+        *self = Self::new(
+            device,
+            width.max(1),
+            height.max(1),
+            self.format,
+            self.sample_count,
+        );
     }
 }
 

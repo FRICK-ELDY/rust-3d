@@ -1,13 +1,11 @@
 mod camera;
-mod mesh;
 mod material;
+mod mesh;
 mod primitives;
 
 pub use camera::Camera;
 
+#[derive(Default)]
 pub struct Scene {
     pub camera: Camera,
-}
-impl Default for Scene {
-    fn default() -> Self { Self { camera: Camera::default() } }
 }

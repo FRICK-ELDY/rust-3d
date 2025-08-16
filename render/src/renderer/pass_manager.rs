@@ -1,9 +1,9 @@
 use crate::passes::Pass;
 
+#[derive(Default)]
 pub struct PassManager {
     passes: Vec<Box<dyn Pass + Send + Sync>>,
 }
-impl Default for PassManager { fn default() -> Self { Self { passes: Vec::new() } } }
 
 impl PassManager {
     pub fn add<P: Pass + Send + Sync + 'static>(&mut self, pass: P) {
@@ -14,5 +14,8 @@ impl PassManager {
             p.draw(rpass);
         }
     }
-    pub fn is_empty(&self) -> bool { self.passes.is_empty() }
+    #[allow(dead_code)]
+    pub fn is_empty(&self) -> bool {
+        self.passes.is_empty()
+    }
 }

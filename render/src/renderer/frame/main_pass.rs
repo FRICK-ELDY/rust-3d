@@ -3,7 +3,7 @@ pub fn begin_main_pass<'a>(
     encoder: &'a mut wgpu::CommandEncoder,
     color_view: &'a wgpu::TextureView,
     resolve_target: Option<&'a wgpu::TextureView>,
-    depth_view:  &'a wgpu::TextureView,
+    depth_view: &'a wgpu::TextureView,
     clear_color: wgpu::Color,
 ) -> wgpu::RenderPass<'a> {
     encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -19,9 +19,9 @@ pub fn begin_main_pass<'a>(
         })],
         depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
             view: depth_view,
-            depth_ops: Some(wgpu::Operations { 
-              load: wgpu::LoadOp::Clear(1.0), 
-              store: wgpu::StoreOp::Store 
+            depth_ops: Some(wgpu::Operations {
+                load: wgpu::LoadOp::Clear(1.0),
+                store: wgpu::StoreOp::Store,
             }),
             stencil_ops: None,
         }),
