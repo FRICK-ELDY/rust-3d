@@ -5,5 +5,11 @@ pub struct Camera {
     pub far: f32,
 }
 impl Default for Camera {
-    fn default() -> Self { Self { fov_y_deg: 60.0, near: 0.1, far: 1000.0 } }
+    fn default() -> Self {
+        Self {
+            fov_y_deg: 60.0,
+            near: 0.1,
+            far: 1000.0,
+        }
+    }
 }

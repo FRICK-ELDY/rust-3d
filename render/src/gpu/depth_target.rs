@@ -12,10 +12,20 @@ pub struct DepthTarget {
 impl DepthTarget {
     pub const DEFAULT_FORMAT: TextureFormat = TextureFormat::Depth32Float;
 
-    pub fn new(device: &Device, width: u32, height: u32, format: TextureFormat, sample_count: u32) -> Self {
+    pub fn new(
+        device: &Device,
+        width: u32,
+        height: u32,
+        format: TextureFormat,
+        sample_count: u32,
+    ) -> Self {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("render/depth-texture"),
-            size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count,
             dimension: wgpu::TextureDimension::D2,
@@ -34,10 +44,22 @@ impl DepthTarget {
             compare: Some(CompareFunction::LessEqual),
             ..Default::default()
         });
-        Self { texture, view, sampler, format, sample_count }
+        Self {
+            texture,
+            view,
+            sampler,
+            format,
+            sample_count,
+        }
     }
 
     pub fn resize(&mut self, device: &Device, width: u32, height: u32) {
-        *self = Self::new(device, width.max(1), height.max(1), self.format, self.sample_count);
+        *self = Self::new(
+            device,
+            width.max(1),
+            height.max(1),
+            self.format,
+            self.sample_count,
+        );
     }
 }

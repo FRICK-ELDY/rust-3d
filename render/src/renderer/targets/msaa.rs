@@ -1,6 +1,6 @@
 // render/src/renderer/targets/msaa.rs
-use winit::dpi::PhysicalSize;
 use crate::gpu::instance::GpuContext;
+use winit::dpi::PhysicalSize;
 
 pub struct MsaaTargets {
     pub color: wgpu::Texture,
@@ -17,7 +17,11 @@ impl MsaaTargets {
     ) -> Self {
         let desc = wgpu::TextureDescriptor {
             label: Some("render/msaa_color"),
-            size: wgpu::Extent3d { width: size.width, height: size.height, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: size.width,
+                height: size.height,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count,
             dimension: wgpu::TextureDimension::D2,
@@ -27,6 +31,11 @@ impl MsaaTargets {
         };
         let color = ctx.device.create_texture(&desc);
         let color_view = color.create_view(&wgpu::TextureViewDescriptor::default());
-        Self { color, color_view, color_format, sample_count }
+        Self {
+            color,
+            color_view,
+            color_format,
+            sample_count,
+        }
     }
 }

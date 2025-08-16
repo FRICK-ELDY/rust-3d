@@ -1,7 +1,7 @@
-#[cfg(target_arch = "wasm32")]
-use web_time::{Instant, Duration};
 #[cfg(not(target_arch = "wasm32"))]
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
+#[cfg(target_arch = "wasm32")]
+use web_time::{Duration, Instant};
 
 pub struct FpsCounter {
     last: Instant,
@@ -20,7 +20,7 @@ impl FpsCounter {
             fps: 0.0,
             ema_ms: 0.0,
             alpha: 0.15,
-            acc: Duration::from_secs(0), 
+            acc: Duration::from_secs(0),
             frames: 0,
         }
     }
@@ -30,7 +30,11 @@ impl FpsCounter {
         self.last = now;
 
         let ms = dt.as_secs_f32() * 1000.0;
-        self.ema_ms = if self.ema_ms == 0.0 { ms } else { self.alpha * ms + (1.0 - self.alpha) * self.ema_ms };
+        self.ema_ms = if self.ema_ms == 0.0 {
+            ms
+        } else {
+            self.alpha * ms + (1.0 - self.alpha) * self.ema_ms
+        };
         self.frame_ms = self.ema_ms;
 
         self.acc += dt;
@@ -40,5 +44,12 @@ impl FpsCounter {
             self.frames = 0;
             self.acc = Duration::ZERO;
         }
+    }
+}
+
+// new_without_default 対応
+impl Default for FpsCounter {
+    fn default() -> Self {
+        Self::new()
     }
 }

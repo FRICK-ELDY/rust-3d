@@ -2,9 +2,9 @@ use anyhow::Result;
 
 pub struct GpuContext {
     pub instance: wgpu::Instance,
-    pub adapter:  wgpu::Adapter,
-    pub device:   wgpu::Device,
-    pub queue:    wgpu::Queue,
+    pub adapter: wgpu::Adapter,
+    pub device: wgpu::Device,
+    pub queue: wgpu::Queue,
 }
 
 impl GpuContext {
@@ -23,25 +23,36 @@ impl GpuContext {
             .await?;
 
         let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: Some("render/device"),
-                    required_features: wgpu::Features::empty(),
-                    required_limits: wgpu::Limits::default(),
-                    memory_hints: wgpu::MemoryHints::Performance,
-                    ..Default::default()
-                }
-            )
+            .request_device(&wgpu::DeviceDescriptor {
+                label: Some("render/device"),
+                required_features: wgpu::Features::empty(),
+                required_limits: wgpu::Limits::default(),
+                memory_hints: wgpu::MemoryHints::Performance,
+                ..Default::default()
+            })
             .await?;
 
-        Ok(Self { instance, adapter, device, queue })
+        Ok(Self {
+            instance,
+            adapter,
+            device,
+            queue,
+        })
     }
 
     pub async fn headless() -> Result<Self> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
-        let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions::default()).await?;
-        let (device, queue) =
-            adapter.request_device(&wgpu::DeviceDescriptor::default()).await?;
-        Ok(Self { instance, adapter, device, queue })
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await?;
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
+            .await?;
+        Ok(Self {
+            instance,
+            adapter,
+            device,
+            queue,
+        })
     }
 }

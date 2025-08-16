@@ -9,8 +9,8 @@ pub fn init_for_native_builds_only() {}
 mod web_app {
     use std::{cell::RefCell, rc::Rc};
 
-    use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
+    use wasm_bindgen::prelude::*;
     use wasm_bindgen_futures::JsFuture;
 
     use winit::dpi::PhysicalSize;
@@ -68,11 +68,8 @@ mod web_app {
                 .expect("#app or <body> not found");
 
             // Canvas 作成 & 追加（CSS サイズは100%）
-            let canvas: web_sys::HtmlCanvasElement = doc
-                .create_element("canvas")
-                .unwrap()
-                .dyn_into()
-                .unwrap();
+            let canvas: web_sys::HtmlCanvasElement =
+                doc.create_element("canvas").unwrap().dyn_into().unwrap();
             // キー入力のためにフォーカス可能に（tabindex）＋ 見た目のスタイル
             let _ = canvas.set_attribute("tabindex", "0");
             let _ = canvas.set_attribute(
@@ -123,8 +120,7 @@ mod web_app {
                         .borrow_mut()
                         .resize(PhysicalSize::new(w, h));
                 }));
-                let ro =
-                    web_sys::ResizeObserver::new(resize_cb.as_ref().unchecked_ref()).unwrap();
+                let ro = web_sys::ResizeObserver::new(resize_cb.as_ref().unchecked_ref()).unwrap();
                 ro.observe(&canvas);
                 resize_cb.forget(); // keep alive
             }
@@ -169,21 +165,23 @@ mod web_app {
 
             *raf_closure.borrow_mut() =
                 Some(wasm_bindgen::closure::Closure::wrap(Box::new(move || {
-                    if let Err(e) =
-                        renderer_for_loop.borrow_mut().render(&scene_for_loop)
-                    {
+                    if let Err(e) = renderer_for_loop.borrow_mut().render(&scene_for_loop) {
                         web_sys::console::error_1(&format!("render error: {:?}", e).into());
                     }
                     // 次フレーム
-                    let _ = web_sys::window()
-                        .unwrap()
-                        .request_animation_frame(
-                            raf_cell.borrow().as_ref().unwrap().as_ref().unchecked_ref(),
-                        );
-                }) as Box<dyn FnMut()>));
+                    let _ = web_sys::window().unwrap().request_animation_frame(
+                        raf_cell.borrow().as_ref().unwrap().as_ref().unchecked_ref(),
+                    );
+                })
+                    as Box<dyn FnMut()>));
 
             let _ = web_sys::window().unwrap().request_animation_frame(
-                raf_closure.borrow().as_ref().unwrap().as_ref().unchecked_ref(),
+                raf_closure
+                    .borrow()
+                    .as_ref()
+                    .unwrap()
+                    .as_ref()
+                    .unchecked_ref(),
             );
 
             // 例：設定ファイルを読みたい場合（存在しなければ無視）

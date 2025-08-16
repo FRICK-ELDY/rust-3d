@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameConfig {
-    pub window_width:  u32,
+    pub window_width: u32,
     pub window_height: u32,
-    pub fullscreen:    bool,
-    pub vsync:         bool,
+    pub fullscreen: bool,
+    pub vsync: bool,
     /// クリアカラー RGBA（0.0..1.0）
-    pub clear_color:   [f32; 4],
+    pub clear_color: [f32; 4],
 }
 
 impl Default for GameConfig {

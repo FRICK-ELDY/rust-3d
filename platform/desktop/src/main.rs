@@ -1,5 +1,6 @@
 // platform/desktop/src/main.rs
 use std::sync::Arc;
+use winit::keyboard::{Key, KeyCode, NamedKey, PhysicalKey};
 use winit::{
     application::ApplicationHandler,
     dpi::PhysicalSize,
@@ -7,22 +8,12 @@ use winit::{
     event_loop::{ActiveEventLoop, EventLoop},
     window::Window,
 };
-use winit::keyboard::{Key, NamedKey, PhysicalKey, KeyCode};
 
+#[derive(Default)]
 struct App {
-    window:   Option<Arc<Window>>,
+    window: Option<Arc<Window>>,
     renderer: Option<render::Renderer>,
-    scene:    render::scene::Scene,
-}
-
-impl Default for App {
-    fn default() -> Self {
-        Self {
-            window: None,
-            renderer: None,
-            scene: Default::default(),
-        }
-    }
+    scene: render::scene::Scene,
 }
 
 impl ApplicationHandler for App {
@@ -33,10 +24,7 @@ impl ApplicationHandler for App {
 
         let window = Arc::new(
             event_loop
-                .create_window(
-                    Window::default_attributes()
-                        .with_title("rust-3d (desktop)")
-                )
+                .create_window(Window::default_attributes().with_title("rust-3d (desktop)"))
                 .expect("failed to create window"),
         );
 
@@ -47,9 +35,8 @@ impl ApplicationHandler for App {
             unsafe { std::mem::transmute::<&Window, &'static Window>(&*window) };
 
         // 非同期初期化を同期で待つ
-        let renderer =
-            pollster::block_on(render::Renderer::new(window_static, size))
-                .expect("renderer init failed");
+        let renderer = pollster::block_on(render::Renderer::new(window_static, size))
+            .expect("renderer init failed");
 
         self.renderer = Some(renderer);
         self.window = Some(window);
@@ -66,7 +53,9 @@ impl ApplicationHandler for App {
         window_id: winit::window::WindowId,
         event: WindowEvent,
     ) {
-        let Some(window) = &self.window else { return; };
+        let Some(window) = &self.window else {
+            return;
+        };
         if window.id() != window_id {
             return;
         }
@@ -77,37 +66,41 @@ impl ApplicationHandler for App {
             }
 
             WindowEvent::Resized(new_size) => {
-                if let Some(r) = &mut self.renderer {
-                    if new_size.width > 0 && new_size.height > 0 {
-                        r.resize(PhysicalSize::new(new_size.width, new_size.height));
-                    }
+                if let Some(r) = &mut self.renderer
+                    && new_size.width > 0
+                    && new_size.height > 0
+                {
+                    r.resize(PhysicalSize::new(new_size.width, new_size.height));
                 }
                 window.request_redraw();
             }
 
-            WindowEvent::ScaleFactorChanged { scale_factor: _, mut inner_size_writer } => {
+            WindowEvent::ScaleFactorChanged {
+                scale_factor: _,
+                mut inner_size_writer,
+            } => {
                 // DPI変更に追従
                 let sz = window.inner_size();
                 let _ = inner_size_writer.request_inner_size(sz);
-                if let Some(r) = &mut self.renderer {
-                    if sz.width > 0 && sz.height > 0 {
-                        r.resize(PhysicalSize::new(sz.width, sz.height));
-                    }
+                if let Some(r) = &mut self.renderer
+                    && sz.width > 0
+                    && sz.height > 0
+                {
+                    r.resize(PhysicalSize::new(sz.width, sz.height));
                 }
                 window.request_redraw();
             }
 
             WindowEvent::KeyboardInput { event, .. } => {
                 if event.state == ElementState::Pressed {
-                    let is_f1_named    = matches!(event.logical_key, Key::Named(NamedKey::F1));
+                    let is_f1_named = matches!(event.logical_key, Key::Named(NamedKey::F1));
                     let is_f1_physical = event.physical_key == PhysicalKey::Code(KeyCode::F1);
-                    if is_f1_named || is_f1_physical {
-                        if let Some(r) = &mut self.renderer {
-                            let on = r.toggle_overlay();
-                            println!("[overlay] {}", if on { "ON" } else { "OFF" });
-                            // 反映を速く見るため即リドロー
-                            window.request_redraw();
-                        }
+                    if (is_f1_named || is_f1_physical)
+                        && let Some(r) = &mut self.renderer
+                    {
+                        let on = r.toggle_overlay();
+                        println!("[overlay] {}", if on { "ON" } else { "OFF" });
+                        window.request_redraw(); // 反映を速く見るため即リドロー
                     }
                 }
             }
@@ -135,5 +128,7 @@ impl ApplicationHandler for App {
 fn main() {
     let event_loop = EventLoop::new().expect("failed to create event loop");
     let mut app = App::default();
-    event_loop.run_app(&mut app).expect("event loop terminated unexpectedly");
+    event_loop
+        .run_app(&mut app)
+        .expect("event loop terminated unexpectedly");
 }
