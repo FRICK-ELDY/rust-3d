@@ -70,7 +70,9 @@ impl SurfaceState {
         match self.surface.get_current_texture() {
             Ok(frame) => Ok(Some(frame)),
             Err(wgpu::SurfaceError::Timeout) => {
+                #[cfg(not(target_arch = "wasm32"))]
                 std::thread::yield_now();
+                
                 self.surface
                     .get_current_texture()
                     .map(Some)

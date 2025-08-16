@@ -12,6 +12,7 @@ bytemuck = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = { workspace = true, features = ["webgpu"] }
+web-time = "1.1"
 
 [features]
 default = []

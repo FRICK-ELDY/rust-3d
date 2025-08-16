@@ -1,3 +1,4 @@
+pub mod debug;
 pub mod config;
 pub mod gpu;
 pub mod scene;       // Camera/Mesh/Material など
