@@ -17,10 +17,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install toolchain (stable + clippy/rustfmt)
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install toolchain (stable + clippy/rustfmt) with retry
+        uses: nick-invision/retry@v3
         with:
-          components: clippy, rustfmt
+          max_attempts: 5
+          retry_wait_seconds: 15
+          timeout_minutes: 10
+          command: |
+            rustup toolchain install stable --profile minimal --no-self-update
+            rustup component add --toolchain stable clippy rustfmt
+            rustup default stable
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
@@ -50,10 +56,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install toolchain (stable)
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install toolchain (stable + wasm) with retry
+        uses: nick-invision/retry@v3
         with:
-          targets: wasm32-unknown-unknown
+          max_attempts: 5
+          retry_wait_seconds: 15
+          timeout_minutes: 10
+          command: |
+            rustup toolchain install stable --profile minimal --no-self-update
+            rustup default stable
+            rustup target add wasm32-unknown-unknown
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
@@ -61,8 +73,13 @@ jobs:
           workspaces: |
             . -> target
 
-      - name: Install trunk
-        run: cargo install trunk --locked
+      - name: Install trunk (retry)
+        uses: nick-invision/retry@v3
+        with:
+          max_attempts: 5
+          retry_wait_seconds: 15
+          timeout_minutes: 10
+          command: cargo install trunk --locked
 
       - name: Build web (release)
         working-directory: platform/web
