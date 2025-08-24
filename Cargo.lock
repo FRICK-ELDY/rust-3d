@@ -550,6 +550,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8b14ccef22fc6f5a8f4d7d768562a182c04ce9a3b3157b91390b52ddfdf1a76"
 
 [[package]]
+name = "engine"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "render",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -809,10 +817,7 @@ name = "integration_min_desktop"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bytemuck",
- "pollster",
- "wgpu",
- "winit",
+ "engine",
 ]
 
 [[package]]
@@ -1539,6 +1544,17 @@ name = "regex-syntax"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "caf4aa5b0f434c91fe5c7f1ecb6a5ece2130b02ad2a590589dda5146df959001"
+
+[[package]]
+name = "render"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "pollster",
+ "wgpu",
+ "winit",
+]
 
 [[package]]
 name = "renderdoc-sys"
