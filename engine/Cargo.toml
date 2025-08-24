@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-render = { path = "../render" }
 anyhow = { workspace = true }
 
-# ここに将来:
-# game    = { path = "../game" }
-# desktop = { path = "../platform/desktop" }
-# web     = { path = "../platform/web" }
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+platform_desktop = { path = "../platform/desktop" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+platform_web = { path = "../platform/web" }

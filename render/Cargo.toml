@@ -7,14 +7,3 @@ edition = "2024"
 wgpu     = { workspace = true }
 anyhow   = { workspace = true }
 bytemuck = { workspace = true }
-
-# デスクトップ向け依存（wasm以外）
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-winit    = { workspace = true }
-pollster = { workspace = true }
-
-# Web向け依存（wasmのみ）
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen         = "0.2"
-wasm-bindgen-futures = "0.4"
-web-sys = { version = "0.3", features = ["Window","Document","HtmlCanvasElement","console"] }
