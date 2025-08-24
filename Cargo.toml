@@ -1,12 +1,13 @@
 [workspace]
 members = [
-  "xtask"
+  "xtask",
+  "examples/*/*"
 ]
 resolver = "2"
 
 [workspace.dependencies]
-wgpu     = "26.0.1"
 winit    = "0.30.12"
+wgpu     = "26.0.1"
 anyhow   = "1"
 bytemuck = { version = "1.14", features = ["derive"] }
 serde    = { version = "1", features = ["derive"] }
