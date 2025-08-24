@@ -1,0 +1,15 @@
+[package]
+name = "integration_min_web"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]   # ← WebAssembly にするため必須
+
+[dependencies]
+engine   = { path = "../../../engine" }
+anyhow   = { workspace = true }
+wasm-bindgen = "0.2"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ['-O'] 

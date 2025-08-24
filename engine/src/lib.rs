@@ -1,16 +1,19 @@
-//! summary: ゲームエンジン統合のエントリポイント（render をラップ）
+//! summary: engine エントリ（プラットフォーム別に render を薄ラップ）
 //! path: engine/src/lib.rs
 
-use anyhow::Result;
-
-/// いまは render を薄くラップするだけ。将来ここにゲーム状態や各種サブシステムを統合。
+#[cfg(not(target_arch = "wasm32"))]
 pub mod desktop {
     use anyhow::Result;
-    /// デスクトップで最小のループを走らせる
-    pub fn run() -> Result<()> {
-        render::desktop::run()
-    }
+    pub fn run() -> Result<()> { render::desktop::run() }
 }
 
-// re-export (必要に応じて)
+#[cfg(target_arch = "wasm32")]
+pub mod web {
+    use anyhow::Result;
+    pub fn run() -> Result<()> { render::web::run() }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub use desktop::run as run_desktop;
+#[cfg(target_arch = "wasm32")]
+pub use web::run as run_web;

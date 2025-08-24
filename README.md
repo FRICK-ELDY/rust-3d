@@ -6,4 +6,8 @@
 ## Examples
 ```
 cargo run -p integration_min_desktop
+
+wasm-pack build examples/web/integration_min --release --target web --out-dir pkg
+cd examples/web/integration_min
+python -m http.server 8080
 ```

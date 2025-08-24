@@ -821,6 +821,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration_min_web"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "engine",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1552,6 +1561,9 @@ dependencies = [
  "anyhow",
  "bytemuck",
  "pollster",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
  "wgpu",
  "winit",
 ]
