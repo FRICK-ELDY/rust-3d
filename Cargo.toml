@@ -1,6 +1,8 @@
 [workspace]
 members = [
   "xtask",
+  "render",
+  "engine",
   "examples/*/*"
 ]
 resolver = "2"

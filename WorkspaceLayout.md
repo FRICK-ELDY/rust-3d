@@ -1,6 +1,6 @@
 # Workspace Layout
 
-- Generated: 2025-08-24 23:34:14
+- Generated: 2025-08-25 00:27:15
 - Root: `D:\Work\FRICK-ELDY\rust-3d`
 - Max Depth: none
 - Excludes: `.dart_tool, .git, .github, .gitignore, .idea, .vscode, Cargo.lock, README.md, WorkspaceLayout.md, assets, bin, build, dist, docs, node_modules, out, target`
@@ -38,7 +38,8 @@
 ### 🎨 render
 | Path | Lines | Status | Summary |
 |------|------:|:------:|---------|
-| _no files_ | 0 | - | - |
+| [render/src/desktop.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/desktop.rs) | 183 | 🟠 | デスクトップ用の最小レンダリングループ（クリアのみ） |
+| [render/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/lib.rs) | 1 | ⚪ | (no summary) |
 
 ---
 
@@ -71,6 +72,21 @@
 root/
 ├─ Cargo.toml
 ├─ LICENSE
+├─ engine/
+│  ├─ Cargo.toml
+│  └─ src/
+│     └─ lib.rs — ゲームエンジン統合のエントリポイント（render をラップ）
+├─ examples/
+│  └─ desktop/
+│     └─ integration_min/
+│        ├─ Cargo.toml
+│        └─ src/
+│           └─ main.rs — integration_min のエントリポイント（engine::run_desktop 呼び出し）
+├─ render/
+│  ├─ Cargo.toml
+│  └─ src/
+│     ├─ desktop.rs — デスクトップ用の最小レンダリングループ（クリアのみ）
+│     └─ lib.rs
 └─ xtask/
    ├─ Cargo.toml
    └─ src/
