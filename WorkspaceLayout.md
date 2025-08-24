@@ -1,6 +1,6 @@
 # Workspace Layout
 
-- Generated: 2025-08-25 01:48:24
+- Generated: 2025-08-25 02:12:12
 - Root: `D:\Work\FRICK-ELDY\rust-3d`
 - Max Depth: none
 - Excludes: `.dart_tool, .git, .github, .gitignore, .idea, .vscode, Cargo.lock, README.md, WorkspaceLayout.md, assets, bin, build, dist, docs, node_modules, out, target`
@@ -24,14 +24,14 @@
 ### 💻 platform/desktop
 | Path | Lines | Status | Summary |
 |------|------:|:------:|---------|
-| [platform/desktop/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/platform/desktop/src/lib.rs) | 113 | 🟠 | デスクトップ最小ループ（共通 Renderer を利用） |
+| [platform/desktop/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/platform/desktop/src/lib.rs) | 139 | 🟠 | デスクトップ最小ループ（共通 Renderer を利用, AppBuilder からの引数に対応） |
 
 ---
 
 ### 🌐 platform/web
 | Path | Lines | Status | Summary |
 |------|------:|:------:|---------|
-| [platform/web/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/platform/web/src/lib.rs) | 67 | 🟡 | Web最小レンダリング（共通 Renderer を利用）+ アダプタ情報を #msg/console に表示 |
+| [platform/web/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/platform/web/src/lib.rs) | 86 | 🟡 | Web最小レンダリング（共通 Renderer を利用）+ アダプタ情報を #msg/console に表示 |
 
 ---
 
@@ -74,24 +74,24 @@ root/
 ├─ engine/
 │  ├─ Cargo.toml
 │  └─ src/
-│     └─ lib.rs — engine エントリ（プラットフォーム別に platform_* を薄ラップ）
+│     └─ lib.rs — engine の統一 API（AppBuilder）— Desktop/Web を薄くラップ
 ├─ examples/
 │  ├─ desktop/
 │  │  └─ integration_min/
 │  │     ├─ Cargo.toml
 │  │     └─ src/
-│  │        └─ main.rs — integration_min のエントリポイント（engine::run_desktop 呼び出し）
+│  │        └─ main.rs — integration_min (desktop) — AppBuilder で起動
 │  └─ web/
 │     └─ integration_min/
 │        ├─ Cargo.toml
 │        ├─ index.html
 │        └─ src/
-│           └─ lib.rs — integration_min の npm/ESM向けエントリ（engine::run_web を呼ぶ）
+│           └─ lib.rs — integration_min (web) — AppBuilder で起動（canvas_id を受け取れる）
 ├─ platform/
 │  ├─ desktop/
 │  │  ├─ Cargo.toml
 │  │  └─ src/
-│  │     └─ lib.rs — デスクトップ最小ループ（共通 Renderer を利用）
+│  │     └─ lib.rs — デスクトップ最小ループ（共通 Renderer を利用, AppBuilder からの引数に対応）
 │  └─ web/
 │     ├─ Cargo.toml
 │     └─ src/

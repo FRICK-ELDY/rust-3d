@@ -7,33 +7,42 @@ use anyhow::{anyhow, Context, Result};
 use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlCanvasElement};
 
-pub fn run() -> Result<()> {
+/// AppBuilder から呼ばれる統一入口（engine から呼ばれる）
+pub fn run_with(
+    clear_color: [f32;4],
+    _prefer_high_performance: bool, // wasm では内部で None にマップ
+    initial_size: Option<(u32,u32)>,
+    canvas_id: Option<String>,
+) -> Result<()> {
     let document = window().context("no window")?.document().context("no document")?;
+    let id = canvas_id.as_deref().unwrap_or("canvas");
     let canvas: HtmlCanvasElement = document
-        .get_element_by_id("canvas")
-        .context("no element: #canvas")?
+        .get_element_by_id(id)
+        .ok_or_else(|| anyhow!("no element: #{id}"))?
         .dyn_into::<HtmlCanvasElement>()
         .map_err(|e| anyhow!("canvas dyn_into failed: {:?}", e))?;
 
+    if let Some((w,h)) = initial_size {
+        canvas.set_width(w.max(1));
+        canvas.set_height(h.max(1));
+    }
     let (w, h) = (canvas.width().max(1), canvas.height().max(1));
 
     wasm_bindgen_futures::spawn_local(async move {
         if let Err(e) = async {
-            // Surface は platform 側で生成
             let instance = wgpu::Instance::default();
             let surface  = instance
                 .create_surface(wgpu::SurfaceTarget::Canvas(canvas))
                 .map_err(|e| anyhow!("create_surface failed: {e:?}"))?;
 
-            // 共通初期化
             let init = render::init_with_surface(
                 &instance,
                 surface,
                 (w, h),
-                render::RenderInitOptions::default(), // wasm では内部で PowerPreference::None へ
+                render::RenderInitOptions::default(),
             ).await?;
 
-            // アダプタ情報を画面とコンソールへ
+            // 任意: アダプタ情報
             let info = init.adapter_info;
             let msg = format!(
                 "Adapter: {} | backend={:?} | type={:?} | vendor=0x{:04x} | device=0x{:04x}",
@@ -46,9 +55,14 @@ pub fn run() -> Result<()> {
                 }
             }
 
-            // 1フレームだけクリア
             let mut renderer = init.renderer;
-            let clear = wgpu::Color { r: 0.07, g: 0.10, b: 0.18, a: 1.0 };
+            // ★ f32 → f64 キャスト
+            let clear = wgpu::Color {
+                r: clear_color[0] as f64,
+                g: clear_color[1] as f64,
+                b: clear_color[2] as f64,
+                a: clear_color[3] as f64,
+            };
             renderer.render_clear(clear)?;
 
             Ok::<(), anyhow::Error>(())
@@ -64,4 +78,9 @@ pub fn run() -> Result<()> {
     });
 
     Ok(())
+}
+
+/// 既定値ショートカット（任意）
+pub fn run() -> Result<()> {
+    run_with([0.07,0.10,0.18,1.0], true, None, None)
 }
