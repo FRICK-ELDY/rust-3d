@@ -1,6 +1,6 @@
 # Workspace Layout
 
-- Generated: 2025-08-25 01:20:21
+- Generated: 2025-08-25 01:48:24
 - Root: `D:\Work\FRICK-ELDY\rust-3d`
 - Max Depth: none
 - Excludes: `.dart_tool, .git, .github, .gitignore, .idea, .vscode, Cargo.lock, README.md, WorkspaceLayout.md, assets, bin, build, dist, docs, node_modules, out, target`
@@ -24,23 +24,21 @@
 ### 💻 platform/desktop
 | Path | Lines | Status | Summary |
 |------|------:|:------:|---------|
-| _no files_ | 0 | - | - |
+| [platform/desktop/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/platform/desktop/src/lib.rs) | 113 | 🟠 | デスクトップ最小ループ（共通 Renderer を利用） |
 
 ---
 
 ### 🌐 platform/web
 | Path | Lines | Status | Summary |
 |------|------:|:------:|---------|
-| _no files_ | 0 | - | - |
+| [platform/web/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/platform/web/src/lib.rs) | 67 | 🟡 | Web最小レンダリング（共通 Renderer を利用）+ アダプタ情報を #msg/console に表示 |
 
 ---
 
 ### 🎨 render
 | Path | Lines | Status | Summary |
 |------|------:|:------:|---------|
-| [render/src/desktop.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/desktop.rs) | 183 | 🟠 | デスクトップ最小ループ（クリア描画）+ アダプタ情報ログ（stdout） |
-| [render/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/lib.rs) | 10 | 🟢 | renderクレートのモジュール公開 |
-| [render/src/web.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/web.rs) | 135 | 🟠 | Web向け最小レンダリング（#canvas をクリア）+ アダプタ情報ログ |
+| [render/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/lib.rs) | 152 | 🟠 | wgpu 初期化・リサイズ・クリア描画の共通実装（Surface を受け取って統一処理） |
 
 ---
 
@@ -76,7 +74,7 @@ root/
 ├─ engine/
 │  ├─ Cargo.toml
 │  └─ src/
-│     └─ lib.rs — engine エントリ（プラットフォーム別に render を薄ラップ）
+│     └─ lib.rs — engine エントリ（プラットフォーム別に platform_* を薄ラップ）
 ├─ examples/
 │  ├─ desktop/
 │  │  └─ integration_min/
@@ -89,12 +87,19 @@ root/
 │        ├─ index.html
 │        └─ src/
 │           └─ lib.rs — integration_min の npm/ESM向けエントリ（engine::run_web を呼ぶ）
+├─ platform/
+│  ├─ desktop/
+│  │  ├─ Cargo.toml
+│  │  └─ src/
+│  │     └─ lib.rs — デスクトップ最小ループ（共通 Renderer を利用）
+│  └─ web/
+│     ├─ Cargo.toml
+│     └─ src/
+│        └─ lib.rs — Web最小レンダリング（共通 Renderer を利用）+ アダプタ情報を #msg/console に表示
 ├─ render/
 │  ├─ Cargo.toml
 │  └─ src/
-│     ├─ desktop.rs — デスクトップ最小ループ（クリア描画）+ アダプタ情報ログ（stdout）
-│     ├─ lib.rs — renderクレートのモジュール公開
-│     └─ web.rs — Web向け最小レンダリング（#canvas をクリア）+ アダプタ情報ログ
+│     └─ lib.rs — wgpu 初期化・リサイズ・クリア描画の共通実装（Surface を受け取って統一処理）
 └─ xtask/
    ├─ Cargo.toml
    └─ src/

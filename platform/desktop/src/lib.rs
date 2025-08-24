@@ -1,4 +1,4 @@
-//! summary: デスクトップ最小ループ（クリア描画）+ アダプタ情報ログ（stdout）
+//! summary: デスクトップ最小ループ（共通 Renderer を利用）
 //! path: platform/desktop/src/lib.rs
 
 use anyhow::{Context, Result};
@@ -11,117 +11,48 @@ use winit::{
 };
 
 struct GpuState<'w> {
-    surface: wgpu::Surface<'w>,
-    device:  wgpu::Device,
-    queue:   wgpu::Queue,
-    config:  wgpu::SurfaceConfiguration,
-    size:    PhysicalSize<u32>,
+    renderer: render::Renderer<'w>,
+    size:     PhysicalSize<u32>,
 }
 
 impl<'w> GpuState<'w> {
     async fn new(window: &'w Window) -> Result<Self> {
+        // Instance と Surface は platform 側で作る
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
             flags: wgpu::InstanceFlags::empty(),
             ..Default::default()
         });
         let surface = instance.create_surface(window).context("create_surface")?;
+        let size = window.inner_size();
 
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                compatible_surface: Some(&surface),
-                force_fallback_adapter: false,
-            })
-            .await
-            .context("request_adapter")?;
+        // 共通初期化
+        let init = render::init_with_surface(
+            &instance,
+            surface,
+            (size.width, size.height),
+            render::RenderInitOptions::default(),
+        ).await?;
 
-        let info = adapter.get_info();
+        // アダプタ情報ログ
+        let info = init.adapter_info;
         println!(
             "Adapter: {} | backend={:?} | type={:?} | vendor=0x{:04x} | device=0x{:04x}",
             info.name, info.backend, info.device_type, info.vendor, info.device
         );
 
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                label: Some("device"),
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::downlevel_webgl2_defaults()
-                    .using_resolution(adapter.limits()),
-                memory_hints: wgpu::MemoryHints::Performance,
-                trace: wgpu::Trace::Off,
-            })
-            .await
-            .context("request_device")?;
-
-        let size = window.inner_size();
-        let caps = surface.get_capabilities(&adapter);
-        let format = caps
-            .formats
-            .iter()
-            .copied()
-            .find(|f| f.is_srgb())
-            .unwrap_or(caps.formats[0]);
-        let present_mode = if caps.present_modes.contains(&wgpu::PresentMode::Mailbox) {
-            wgpu::PresentMode::Mailbox
-        } else {
-            wgpu::PresentMode::Fifo
-        };
-
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format,
-            width:  size.width.max(1),
-            height: size.height.max(1),
-            present_mode,
-            alpha_mode: caps.alpha_modes[0],
-            view_formats: vec![],
-            desired_maximum_frame_latency: 2,
-        };
-        surface.configure(&device, &config);
-
-        Ok(Self { surface, device, queue, config, size })
+        Ok(Self { renderer: init.renderer, size })
     }
 
     fn resize(&mut self, new_size: PhysicalSize<u32>) {
         if new_size.width == 0 || new_size.height == 0 { return; }
         self.size = new_size;
-        self.config.width  = new_size.width;
-        self.config.height = new_size.height;
-        self.surface.configure(&self.device, &self.config);
+        self.renderer.resize(new_size.width, new_size.height);
     }
 
     fn render(&mut self) -> Result<()> {
-        let frame = self.surface.get_current_texture().context("get_current_texture")?;
-        let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("encoder"),
-        });
-
         let clear = wgpu::Color { r: 0.07, g: 0.10, b: 0.18, a: 1.0 };
-
-        {
-            let _rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("clear pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load:  wgpu::LoadOp::Clear(clear),
-                        store: wgpu::StoreOp::Store,
-                    },
-                    depth_slice: None,
-                })],
-                depth_stencil_attachment: None,
-                occlusion_query_set: None,
-                timestamp_writes: None,
-            });
-        }
-
-        self.queue.submit(Some(encoder.finish()));
-        frame.present();
-        Ok(())
+        self.renderer.render_clear(clear)
     }
 }
 

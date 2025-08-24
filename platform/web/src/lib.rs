@@ -1,5 +1,7 @@
-//! summary: Web向け最小レンダリング（#canvas クリア）+ アダプタ情報を #msg と console に表示
+//! summary: Web最小レンダリング（共通 Renderer を利用）+ アダプタ情報を #msg/console に表示
 //! path: platform/web/src/lib.rs
+
+#![cfg(target_arch = "wasm32")]
 
 use anyhow::{anyhow, Context, Result};
 use wasm_bindgen::JsCast;
@@ -17,21 +19,22 @@ pub fn run() -> Result<()> {
 
     wasm_bindgen_futures::spawn_local(async move {
         if let Err(e) = async {
+            // Surface は platform 側で生成
             let instance = wgpu::Instance::default();
-            let surface = instance
+            let surface  = instance
                 .create_surface(wgpu::SurfaceTarget::Canvas(canvas))
                 .map_err(|e| anyhow!("create_surface failed: {e:?}"))?;
 
-            let adapter = instance
-                .request_adapter(&wgpu::RequestAdapterOptions {
-                    power_preference: wgpu::PowerPreference::None, // Windows 警告回避
-                    compatible_surface: Some(&surface),
-                    force_fallback_adapter: false,
-                })
-                .await
-                .context("request_adapter failed")?;
+            // 共通初期化
+            let init = render::init_with_surface(
+                &instance,
+                surface,
+                (w, h),
+                render::RenderInitOptions::default(), // wasm では内部で PowerPreference::None へ
+            ).await?;
 
-            let info = adapter.get_info();
+            // アダプタ情報を画面とコンソールへ
+            let info = init.adapter_info;
             let msg = format!(
                 "Adapter: {} | backend={:?} | type={:?} | vendor=0x{:04x} | device=0x{:04x}",
                 info.name, info.backend, info.device_type, info.vendor, info.device
@@ -43,61 +46,11 @@ pub fn run() -> Result<()> {
                 }
             }
 
-            let (device, queue) = adapter
-                .request_device(&wgpu::DeviceDescriptor {
-                    label: Some("device"),
-                    required_features: wgpu::Features::empty(),
-                    required_limits: wgpu::Limits::downlevel_webgl2_defaults()
-                        .using_resolution(adapter.limits()),
-                    memory_hints: wgpu::MemoryHints::Performance,
-                    trace: wgpu::Trace::Off,
-                })
-                .await
-                .context("request_device failed")?;
+            // 1フレームだけクリア
+            let mut renderer = init.renderer;
+            let clear = wgpu::Color { r: 0.07, g: 0.10, b: 0.18, a: 1.0 };
+            renderer.render_clear(clear)?;
 
-            let caps = surface.get_capabilities(&adapter);
-            let format = caps.formats[0];
-
-            surface.configure(
-                &device,
-                &wgpu::SurfaceConfiguration {
-                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                    format,
-                    width: w,
-                    height: h,
-                    present_mode: wgpu::PresentMode::Fifo,
-                    alpha_mode: caps.alpha_modes[0],
-                    view_formats: vec![],
-                    desired_maximum_frame_latency: 2,
-                },
-            );
-
-            let frame = surface.get_current_texture().context("get_current_texture failed")?;
-            let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
-            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("encoder"),
-            });
-
-            {
-                let _rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("clear pass"),
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load:  wgpu::LoadOp::Clear(wgpu::Color { r: 0.07, g: 0.10, b: 0.18, a: 1.0 }),
-                            store: wgpu::StoreOp::Store,
-                        },
-                        depth_slice: None,
-                    })],
-                    depth_stencil_attachment: None,
-                    occlusion_query_set: None,
-                    timestamp_writes: None,
-                });
-            }
-
-            queue.submit(Some(encoder.finish()));
-            frame.present();
             Ok::<(), anyhow::Error>(())
         }.await {
             let s = format!("render error: {e:#}");
