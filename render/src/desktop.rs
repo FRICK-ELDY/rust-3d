@@ -1,7 +1,7 @@
-//! summary: デスクトップ用の最小レンダリングループ（クリアのみ）
+//! summary: デスクトップ最小ループ（クリア描画）+ アダプタ情報ログ（stdout）
 //! path: render/src/desktop.rs
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use winit::{
     application::ApplicationHandler,
     dpi::PhysicalSize,
@@ -25,7 +25,7 @@ impl<'w> GpuState<'w> {
             flags: wgpu::InstanceFlags::empty(),
             ..Default::default()
         });
-        let surface = instance.create_surface(window)?;
+        let surface = instance.create_surface(window).context("create_surface")?;
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -34,7 +34,14 @@ impl<'w> GpuState<'w> {
                 force_fallback_adapter: false,
             })
             .await
-            .map_err(|e| anyhow::anyhow!("request_adapter failed: {e:?}"))?;
+            .context("request_adapter")?;
+
+        // ★ アダプタ情報ログ
+        let info = adapter.get_info();
+        println!(
+            "Adapter: {} | backend={:?} | type={:?} | vendor=0x{:04x} | device=0x{:04x}",
+            info.name, info.backend, info.device_type, info.vendor, info.device
+        );
 
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
@@ -45,7 +52,8 @@ impl<'w> GpuState<'w> {
                 memory_hints: wgpu::MemoryHints::Performance,
                 trace: wgpu::Trace::Off,
             })
-            .await?;
+            .await
+            .context("request_device")?;
 
         let size = window.inner_size();
         let caps = surface.get_capabilities(&adapter);
@@ -85,10 +93,7 @@ impl<'w> GpuState<'w> {
     }
 
     fn render(&mut self) -> Result<()> {
-        let frame = self
-            .surface
-            .get_current_texture()
-            .map_err(|e| anyhow::anyhow!("get_current_texture(): {e}"))?;
+        let frame = self.surface.get_current_texture().context("get_current_texture")?;
         let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -144,12 +149,7 @@ impl ApplicationHandler for App {
         }
     }
 
-    fn window_event(
-        &mut self,
-        event_loop: &ActiveEventLoop,
-        _id: WindowId,
-        mut event: WindowEvent,
-    ) {
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, mut event: WindowEvent) {
         match (self.window, self.gpu.as_mut()) {
             (Some(window), Some(gpu)) => match event {
                 WindowEvent::CloseRequested => event_loop.exit(),

@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>integration_min (Web)</title>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      #canvas { width: 100%; height: 100%; background: #111; }
+      #msg { position: fixed; top: 8px; left: 8px; color: #fff; font: 14px/1.4 sans-serif; }
+    </style>
+  </head>
+  <body>
+    <div id="msg"></div>
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <script type="module">
+      import initWasm, * as wasm from "./pkg/integration_min_web.js";
+
+      const msg = document.getElementById('msg');
+      if (!('gpu' in navigator)) {
+        msg.textContent = 'WebGPU が無効/未対応です。Chrome/Edge の最新でお試しください。';
+      }
+
+      try {
+        await initWasm();           // wasm ロード
+        wasm.init?.(null);          // Rust 側エクスポートを呼ぶ
+        msg.textContent = '起動しました（濃紺クリアが見えればOK）';
+      } catch (e) {
+        console.error(e);
+        msg.textContent = '初期化エラー。コンソールを確認してください。';
+      }
+    </script>
+  </body>
+</html>

@@ -1,6 +1,6 @@
 # Workspace Layout
 
-- Generated: 2025-08-25 00:27:15
+- Generated: 2025-08-25 01:20:21
 - Root: `D:\Work\FRICK-ELDY\rust-3d`
 - Max Depth: none
 - Excludes: `.dart_tool, .git, .github, .gitignore, .idea, .vscode, Cargo.lock, README.md, WorkspaceLayout.md, assets, bin, build, dist, docs, node_modules, out, target`
@@ -38,8 +38,9 @@
 ### 🎨 render
 | Path | Lines | Status | Summary |
 |------|------:|:------:|---------|
-| [render/src/desktop.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/desktop.rs) | 183 | 🟠 | デスクトップ用の最小レンダリングループ（クリアのみ） |
-| [render/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/lib.rs) | 1 | ⚪ | (no summary) |
+| [render/src/desktop.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/desktop.rs) | 183 | 🟠 | デスクトップ最小ループ（クリア描画）+ アダプタ情報ログ（stdout） |
+| [render/src/lib.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/lib.rs) | 10 | 🟢 | renderクレートのモジュール公開 |
+| [render/src/web.rs](https://github.com/FRICK-ELDY/rust-3d/blob/main/render/src/web.rs) | 135 | 🟠 | Web向け最小レンダリング（#canvas をクリア）+ アダプタ情報ログ |
 
 ---
 
@@ -75,18 +76,25 @@ root/
 ├─ engine/
 │  ├─ Cargo.toml
 │  └─ src/
-│     └─ lib.rs — ゲームエンジン統合のエントリポイント（render をラップ）
+│     └─ lib.rs — engine エントリ（プラットフォーム別に render を薄ラップ）
 ├─ examples/
-│  └─ desktop/
+│  ├─ desktop/
+│  │  └─ integration_min/
+│  │     ├─ Cargo.toml
+│  │     └─ src/
+│  │        └─ main.rs — integration_min のエントリポイント（engine::run_desktop 呼び出し）
+│  └─ web/
 │     └─ integration_min/
 │        ├─ Cargo.toml
+│        ├─ index.html
 │        └─ src/
-│           └─ main.rs — integration_min のエントリポイント（engine::run_desktop 呼び出し）
+│           └─ lib.rs — integration_min の npm/ESM向けエントリ（engine::run_web を呼ぶ）
 ├─ render/
 │  ├─ Cargo.toml
 │  └─ src/
-│     ├─ desktop.rs — デスクトップ用の最小レンダリングループ（クリアのみ）
-│     └─ lib.rs
+│     ├─ desktop.rs — デスクトップ最小ループ（クリア描画）+ アダプタ情報ログ（stdout）
+│     ├─ lib.rs — renderクレートのモジュール公開
+│     └─ web.rs — Web向け最小レンダリング（#canvas をクリア）+ アダプタ情報ログ
 └─ xtask/
    ├─ Cargo.toml
    └─ src/
