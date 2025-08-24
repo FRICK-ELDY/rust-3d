@@ -554,7 +554,8 @@ name = "engine"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "render",
+ "platform_desktop",
+ "platform_web",
 ]
 
 [[package]]
@@ -1407,6 +1408,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 
 [[package]]
+name = "platform_desktop"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "pollster",
+ "render",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
+name = "platform_web"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "render",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "wgpu",
+]
+
+[[package]]
 name = "polling"
 version = "3.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1560,12 +1584,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytemuck",
- "pollster",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
  "wgpu",
- "winit",
 ]
 
 [[package]]

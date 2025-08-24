@@ -1,10 +1,4 @@
-//! summary: renderクレートのモジュール公開
+//! summary: プラットフォーム非依存のレンダリング基盤（将来的にパイプライン等を集約）
 //! path: render/src/lib.rs
 
-// デスクトップ側は wasm32 以外でだけ有効
-#[cfg(not(target_arch = "wasm32"))]
-pub mod desktop;
-
-// Web側は wasm32 のときだけ有効
-#[cfg(target_arch = "wasm32")]
-pub mod web;
+// いまは空でOK。今後 Renderer やリソース管理をここに集約。

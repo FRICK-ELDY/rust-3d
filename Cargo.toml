@@ -3,6 +3,8 @@ members = [
   "xtask",
   "render",
   "engine",
+  "platform/desktop",
+  "platform/web",
   "examples/*/*"
 ]
 resolver = "2"
