@@ -1,3 +1,4 @@
+```mermaid
 graph TD
 
   %% ========= Title =========
@@ -62,3 +63,4 @@ graph TD
 
   %% xtask generates WorkspaceLayout.md (dotted = meta relation)
   xtask -. generates .-> ws_layout[("WorkspaceLayout.md")]
+```
